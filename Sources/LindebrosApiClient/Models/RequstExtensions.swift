@@ -67,16 +67,16 @@ public extension Client.Request {
 
         let (data, resp) = try await urlSession.data(for: urlRequest)
 
-        if Thread.current.isMainThread {
-            assertionFailure("request was made on the main thread")
-        }
-
         let response = resp as? HTTPURLResponse
 
         let httpStatus = Client.HttpStatusCode(rawValue: response?.statusCode ?? 0) ?? .unknown
 
         let jsonDecoder = JSONDecoder()
         jsonDecoder.keyDecodingStrategy = config?.keydecodingStrategy ?? .convertFromSnakeCase
+        if let dateDecodingStrategy {
+            jsonDecoder.dateDecodingStrategy = dateDecodingStrategy
+        }
+
         if httpStatus.isOk() {
             if data.count > 0 {
                 return Client.Response(
@@ -112,8 +112,8 @@ extension Client.Request {
         return Client.ContentType(rawValue: contentType)
     }
 
-    func clone(with urlRequest: URLRequest, andConfig config: Client.Configuration?) -> Self {
-        Client.Request(urlRequest: urlRequest, config: config)
+    func clone(with urlRequest: URLRequest, andConfig config: Client.Configuration?, dateDecodingStrategy: JSONDecoder.DateDecodingStrategy? = nil) -> Self {
+        Client.Request(urlRequest: urlRequest, config: config, dateDecodingStrategy: dateDecodingStrategy)
     }
 
     func updateURL(with newQuery: QuerystringState) -> URL? {
@@ -132,5 +132,14 @@ extension Client.Request {
         }
 
         return nil
+    }
+
+    public func setDateDecodingStrategy(to dateDecodingStrategy: JSONDecoder.DateDecodingStrategy?) -> Self {
+        guard
+            let urlRequest
+        else {
+            return self
+        }
+        return clone(with: urlRequest, andConfig: config, dateDecodingStrategy: dateDecodingStrategy)
     }
 }

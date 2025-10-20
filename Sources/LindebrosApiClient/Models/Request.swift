@@ -5,20 +5,25 @@ public extension Client {
     struct Request: CustomStringConvertible {
         public var urlRequest: URLRequest?
 
+        public var dateDecodingStrategy: JSONDecoder.DateDecodingStrategy?
+
         var config: Configuration?
 
-        public init(url: URL?) {
+        public init(url: URL?, dateDecodingStrategy: JSONDecoder.DateDecodingStrategy? = nil) {
             guard let url = url else { return }
             urlRequest = URLRequest(url: url)
             config = nil
+            self.dateDecodingStrategy = dateDecodingStrategy
         }
 
         public init(
             urlRequest: URLRequest,
-            config: Configuration? = nil
+            config: Configuration? = nil,
+            dateDecodingStrategy: JSONDecoder.DateDecodingStrategy? = nil
         ) {
             self.urlRequest = urlRequest
             self.config = config
+            self.dateDecodingStrategy = dateDecodingStrategy
         }
 
         public func setHeader(key: String, value: String) -> Self {
