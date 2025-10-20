@@ -6,7 +6,7 @@ struct ContentView: View {
     init() {
         client = Client(
             configuration: Client.Configuration(
-                baseURL: URL(string: "https://foaas.com")!
+                baseURL: URL(string: "https://example.com/somapi")!
             )
         )
     }
@@ -17,10 +17,21 @@ struct ContentView: View {
         state = .loading
         Task {
             do {
-                if let model: TestModel = try await client.get("/awesome/LindebrosApiClient").dispatch() {
-                    self.state = .success(model)
-                }
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
+
+                self.state = try .success(
+                    await client.get(
+                        "/latest-summary",
+                        with: .init().set("channel", value: ["p1"])
+                    )
+
+                    .setDateDecodingStrategy(to: .formatted(formatter))
+                        .dispatch()
+                )
+
             } catch {
+                print("❌", error)
                 self.state = .error(error)
             }
         }
@@ -34,7 +45,7 @@ struct ContentView: View {
             case .loading:
                 ProgressView()
             case let .success(model):
-                Text(model.message)
+                Text(model.shortSummary ?? "unknown")
             case let .error(error):
                 Text(error.localizedDescription)
             }
@@ -48,8 +59,8 @@ struct ContentView: View {
     }
 
     struct TestModel: Codable {
-        var message: String
-        var subtitle: String
+        var shortSummary: String?
+        var timestamp: Date?
     }
 
     enum ViewState {

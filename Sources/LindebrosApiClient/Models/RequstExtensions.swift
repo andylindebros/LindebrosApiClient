@@ -8,7 +8,7 @@ extension Client.Request {
         Client.ClientLogger.shared.info("✅ [\(status.rawValue)] \(path)")
     }
 
-    @MainActor public func dispatch<Model: Decodable>() async throws -> Model? {
+    @MainActor public func dispatch<Model: Decodable>() async throws -> Model {
         Client.ClientLogger.shared.info(self)
 
         // Make the request
@@ -40,10 +40,7 @@ extension Client.Request {
                     .setBody(model: clientCredentials)
                     .asyncRequest(urlSession: config.urlSession)
 
-                guard let credentials = loginResponse.model else {
-                    // Could not fetch a new client, cannot continue making second request attempt
-                    throw e
-                }
+                let credentials = loginResponse.model
                 Client.ClientLogger.shared.info("✅ Received new token")
                 config.credentialsProvider?.setCredentials(to: credentials)
 
@@ -78,13 +75,7 @@ public extension Client.Request {
         }
 
         if httpStatus.isOk() {
-            if data.count > 0 {
-                return Client.Response(
-                    model: try jsonDecoder.decode(Model.self, from: data),
-                    status: httpStatus
-                )
-            }
-            return Client.Response(model: nil, status: httpStatus)
+            return Client.Response(model: try jsonDecoder.decode(Model.self, from: data), status: httpStatus)
         }
 
         throw Client.ErrorResponse(message: "Service responded with error", status: httpStatus, data: data)
