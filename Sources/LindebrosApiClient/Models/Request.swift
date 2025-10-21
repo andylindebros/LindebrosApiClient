@@ -38,7 +38,7 @@ public extension Client {
             return clone(with: urlRequest, andConfig: config)
         }
 
-        public func setBody<Model: Encodable>(model: Model, keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy = .convertToSnakeCase) -> Self {
+        public func setBody<Model: Encodable>(model: Model, keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy = .convertToSnakeCase, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy? = nil) -> Self {
             guard var urlRequest = self.urlRequest else { return self }
 
             switch HttpMethod(rawValue: urlRequest.httpMethod ?? "unknown") {
@@ -47,6 +47,9 @@ public extension Client {
                 case .json:
                     do {
                         let encoder = JSONEncoder()
+                        if let dateEncodingStrategy {
+                            encoder.dateEncodingStrategy = dateEncodingStrategy
+                        }
                         encoder.keyEncodingStrategy = keyEncodingStrategy
                         urlRequest.httpBody = try encoder.encode(model)
                     } catch {}
