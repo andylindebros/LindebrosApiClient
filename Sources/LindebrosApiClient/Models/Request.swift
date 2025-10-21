@@ -104,7 +104,35 @@ public extension Client {
 
             let token = urlRequest.value(forHTTPHeaderField: "Authorization")
 
-            return "[\(method.rawValue)] \(url.path) \(url.query ?? "") \(token ?? "")"
+            switch config?.logLevel {
+            case .raw:
+                return """
+                
+                \(method.rawValue) \(url.path)\(url.query != nil ? "?": "")\(url.query ?? "")
+                \(getHeaders().joined(separator: "\n"))
+                
+                \(getJSONBody() ?? "")
+                """
+            case .normal:
+                return "[\(method.rawValue)] \(url.path) \(url.query ?? "") \(token ?? "")"
+            default:
+                return ""
+            }
+
+        }
+
+        private func getJSONBody() -> String? {
+            guard let data = urlRequest?.httpBody else { return nil }
+            return String(data: data, encoding: .utf8)
+        }
+
+        private func getHeaders() -> [String] {
+            if let headers = urlRequest?.allHTTPHeaderFields {
+                return headers.map { key, value in
+                    "\(key): \(value)"
+                }
+            }
+            return []
         }
     }
 }

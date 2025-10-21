@@ -21,9 +21,10 @@ struct ContentView: View {
                 formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
 
                 self.state = try .success(
-                    await client.get(
-                        "/latest-summary",
-                        with: .init().set("channel", value: ["p1"])
+                    await client.put(
+                        TestModel(shortSummary: "Awesome", timestamp: Date.now),
+                        to: "/latest-summary?awesome=22",
+                        //with: .init().set("channel", value: ["p1"])
                     )
 
                     .setDateDecodingStrategy(to: .formatted(formatter))

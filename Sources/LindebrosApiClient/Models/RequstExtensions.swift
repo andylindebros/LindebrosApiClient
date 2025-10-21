@@ -5,11 +5,25 @@ import SwiftUI
 extension Client.Request {
     private func logResponse(of url: URL?, with status: Client.HttpStatusCode) {
         let path = url != nil ? "\(url?.path ?? "") " : ""
-        Client.ClientLogger.shared.info("✅ [\(status.rawValue)] \(path)")
+        switch config?.logLevel {
+        case .normal, .raw:
+            Client.ClientLogger.shared.info("✅ [\(status.rawValue)] \(path)")
+        default:
+            break
+        }
+    }
+
+    private func logRequest() {
+        switch config?.logLevel {
+        case .normal, .raw:
+            Client.ClientLogger.shared.info(self)
+        default:
+            break
+        }
     }
 
     @MainActor public func dispatch<Model: Decodable>() async throws -> Model {
-        Client.ClientLogger.shared.info(self)
+        logRequest()
 
         // Make the request
         do {
