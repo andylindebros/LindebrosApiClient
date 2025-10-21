@@ -3,20 +3,21 @@ import Foundation
 public protocol ClientProvider {
     func get(_ endpoint: String, with state: QuerystringState?) -> Client.Request
 
-    func post<PostModel: Encodable>(_ model: PostModel, to endpoint: String, contentType: Client.ContentType, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy?) throws -> Client.Request
+    func post<PostModel: Encodable>(_ model: PostModel, to endpoint: String, contentType: Client.ContentType, keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy?) throws -> Client.Request
 
-    func put<PutModel: Encodable>(_ model: PutModel, to endpoint: String, contentType: Client.ContentType, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy?) throws -> Client.Request
+    func put<PutModel: Encodable>(_ model: PutModel, to endpoint: String, contentType: Client.ContentType, keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy?) throws -> Client.Request
 
     func delete(_ endpoint: String, with state: QuerystringState?) -> Client.Request
 }
 
 public extension ClientProvider {
     func post<PostModel: Encodable>(_ model: PostModel, to endpoint: String, contentType: Client.ContentType) throws -> Client.Request {
-        try post(model, to: endpoint, contentType: contentType, dateEncodingStrategy: nil)
+        try post(model, to: endpoint, contentType: contentType,
+                 keyEncodingStrategy: .convertToSnakeCase, dateEncodingStrategy: nil)
     }
 
     func put<PutModel: Encodable>(_ model: PutModel, to endpoint: String, contentType: Client.ContentType) throws -> Client.Request {
-        try put(model, to: endpoint, contentType: contentType, dateEncodingStrategy: nil)
+        try put(model, to: endpoint, contentType: contentType, keyEncodingStrategy: .convertToSnakeCase, dateEncodingStrategy: nil)
     }
 }
 
@@ -60,11 +61,11 @@ public struct Client: ClientProvider {
      - parameter contentType: The type of data, json or form.
      - returns Model with populated data
      */
-    public func post<PostModel: Encodable>(_ model: PostModel, to endpoint: String, contentType: ContentType = .json, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy? = nil) throws -> Request {
+    public func post<PostModel: Encodable>(_ model: PostModel, to endpoint: String, contentType: ContentType = .json, keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy? = nil) throws -> Request {
         try Request(url: URL(string: endpoint, relativeTo: configuration.baseURL))
             .setMethod(.post)
             .setContentType(contentType)
-            .setBody(model: model, dateEncodingStrategy: dateEncodingStrategy)
+            .setBody(model: model, keyEncodingStrategy: keyEncodingStrategy, dateEncodingStrategy: dateEncodingStrategy)
             .setAcceptJSON()
             .setConfig(configuration)
     }
@@ -76,11 +77,11 @@ public struct Client: ClientProvider {
      - parameter contentType: The type of data, json or form.
      - returns Model with populated data
      */
-    public func put<PutModel: Encodable>(_ model: PutModel, to endpoint: String, contentType: ContentType = .json, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy? = nil) throws -> Request {
+    public func put<PutModel: Encodable>(_ model: PutModel, to endpoint: String, contentType: ContentType = .json, keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy = .convertToSnakeCase, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy? = nil) throws -> Request {
         try Request(url: URL(string: endpoint, relativeTo: configuration.baseURL))
             .setMethod(.put)
             .setContentType(contentType)
-            .setBody(model: model, dateEncodingStrategy: dateEncodingStrategy)
+            .setBody(model: model, keyEncodingStrategy: keyEncodingStrategy, dateEncodingStrategy: dateEncodingStrategy)
             .setAcceptJSON()
             .setConfig(configuration)
     }
