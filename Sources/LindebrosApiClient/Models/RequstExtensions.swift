@@ -44,7 +44,8 @@ extension Client.Request {
                 errorResponse.status == .unauthorized || errorResponse.status == .forbidden,
                 let config = config,
                 config.credentialsProvider?.provideCredentials()?.isUserCredential ?? false == false,
-                let clientCredentials = config.clientCredentials {
+                let clientCredentials = config.clientCredentials
+            {
                 Client.ClientLogger.shared.info("🔑 fetching new token")
 
                 let loginResponse: Client.Response<Client.Credentials> = try await Client(configuration: config)
@@ -89,7 +90,11 @@ public extension Client.Request {
         }
 
         if httpStatus.isOk() {
-            return Client.Response(model: try jsonDecoder.decode(Model.self, from: data), status: httpStatus)
+            if data.isEmpty {
+                return try Client.Response(model: JSONDecoder().decodeIfEmpty(Model.self), status: httpStatus)
+            } else {
+                return try Client.Response(model: jsonDecoder.decode(Model.self, from: data), status: httpStatus)
+            }
         }
 
         throw Client.ErrorResponse(message: "Service responded with error", status: httpStatus, data: data)
@@ -97,7 +102,7 @@ public extension Client.Request {
 
     func setQueryIfNeeded(with state: QuerystringState? = nil) -> Self {
         guard
-            var urlRequest = self.urlRequest,
+            var urlRequest = urlRequest,
             let state = state,
             let newURL = updateURL(with: state)
         else {
@@ -112,7 +117,7 @@ public extension Client.Request {
 
 extension Client.Request {
     var contentType: Client.ContentType? {
-        guard let urlRequest = self.urlRequest else { return nil }
+        guard let urlRequest = urlRequest else { return nil }
         guard let contentType = urlRequest.allHTTPHeaderFields?.filter({ $0.key == "Content-Type" }).map({ $0.value }).first else { return nil }
         return Client.ContentType(rawValue: contentType)
     }
@@ -123,7 +128,7 @@ extension Client.Request {
 
     func updateURL(with newQuery: QuerystringState) -> URL? {
         guard
-            let urlRequest = self.urlRequest
+            let urlRequest = urlRequest
         else {
             return nil
         }
@@ -148,3 +153,4 @@ extension Client.Request {
         return clone(with: urlRequest, andConfig: config, dateDecodingStrategy: dateDecodingStrategy)
     }
 }
+

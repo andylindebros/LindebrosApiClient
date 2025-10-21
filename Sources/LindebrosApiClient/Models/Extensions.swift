@@ -92,3 +92,13 @@ extension URLSession: URLSessionProvider {
         }
     }
 }
+
+extension JSONDecoder {
+    func decodeIfEmpty<T: Decodable>(_: T.Type) throws -> T {
+        if let emptyInit = T.self as? (any ExpressibleByNilLiteral.Type) {
+            return emptyInit.init(nilLiteral: ()) as! T
+        }
+        let emptyData = "{}".data(using: .utf8)!
+        return try decode(T.self, from: emptyData)
+    }
+}
