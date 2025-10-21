@@ -27,34 +27,34 @@ public extension Client {
         }
 
         public func setHeader(key: String, value: String) -> Self {
-            guard var urlRequest = self.urlRequest else { return self }
+            guard var urlRequest = urlRequest else { return self }
             urlRequest.setValue(value, forHTTPHeaderField: key)
             return clone(with: urlRequest, andConfig: config)
         }
 
         public func setMethod(_ method: HttpMethod) -> Self {
-            guard var urlRequest = self.urlRequest else { return self }
+            guard var urlRequest = urlRequest else { return self }
             urlRequest.httpMethod = method.rawValue
             return clone(with: urlRequest, andConfig: config)
         }
 
-        public func setBody<Model: Encodable>(model: Model, keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy = .convertToSnakeCase, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy? = nil) -> Self {
-            guard var urlRequest = self.urlRequest else { return self }
+        public func setBody<Model: Encodable>(model: Model, keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy = .convertToSnakeCase, dateEncodingStrategy: JSONEncoder.DateEncodingStrategy? = nil) throws -> Self {
+            guard var urlRequest = urlRequest else { return self }
 
             switch HttpMethod(rawValue: urlRequest.httpMethod ?? "unknown") {
             case .post, .put:
                 switch contentType {
                 case .json:
-                    do {
-                        let encoder = JSONEncoder()
-                        if let dateEncodingStrategy {
-                            encoder.dateEncodingStrategy = dateEncodingStrategy
-                        }
-                        encoder.keyEncodingStrategy = keyEncodingStrategy
-                        urlRequest.httpBody = try encoder.encode(model)
-                    } catch {}
+                    let encoder = JSONEncoder()
+                    if let dateEncodingStrategy {
+                        encoder.dateEncodingStrategy = dateEncodingStrategy
+                    }
+                    encoder.keyEncodingStrategy = keyEncodingStrategy
+                    urlRequest.httpBody = try encoder.encode(model)
+
                 case .form:
                     urlRequest.httpBody = model.asQueryString.data(using: .utf8)
+
                 case .none:
                     break
                 }
@@ -63,6 +63,7 @@ public extension Client {
                 if let newURL = updateURL(with: QuerystringState(queryString: model.asRawQueryString)) {
                     urlRequest.url = newURL
                 }
+
             case .none:
                 break
             }
@@ -90,13 +91,13 @@ public extension Client {
         }
 
         public func setConfig(_ config: Configuration) -> Self {
-            guard let urlRequest = self.urlRequest else { return self }
+            guard let urlRequest = urlRequest else { return self }
             return clone(with: urlRequest, andConfig: config)
         }
 
         public var description: String {
             guard
-                let urlRequest = self.urlRequest,
+                let urlRequest = urlRequest,
                 let url = urlRequest.url,
                 let method = HttpMethod(rawValue: urlRequest.httpMethod ?? "unknown")
             else { return "invalid" }
